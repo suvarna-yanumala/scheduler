@@ -1,0 +1,55 @@
+service: scheduler
+provider:
+  name: aws
+  runtime: nodejs10.x
+  environment:
+    Listing_TABLE: ${self:service}-${opt:stage, self:provider.stage}-doc
+    ROOT_URL: https://alpha-api.rexsoftware.com/v1/  
+
+# you can overwrite defaults here
+stage: dev
+region: us-east-1
+iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:Query
+      - dynamodb:Scan
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:DeleteItem
+      Resource: "*"
+      
+
+plugins:
+    - serverless-webpack
+custom:
+    webpack:
+        webpackConfig: ./webpack.config.js
+        includeModules: true # enable auto-packing of external modules
+
+functions:
+  queryListing:
+    handler: handler.queryListing
+    events:
+    - http:
+        path: list
+        method: get
+        cors: true  
+    - schedule:
+        rate: rate(5 minutes)
+        enabled: false  
+resources:
+  Resources:
+    ProductsDynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.Listing_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1       
