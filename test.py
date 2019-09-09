@@ -12,4 +12,3 @@ fo.write( "Python is a great language.\nYeah its great!!\n")
 fo.close()
 def add(a,b):
     return a+b
-print("=============",add(2,4))
